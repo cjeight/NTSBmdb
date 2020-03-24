@@ -14,6 +14,10 @@ out the current update file name by the posted date rather than by name.
             added to make sure there is not an existing renamed
             update file (NTSBupd.mdb) in the directory and code
             to rename the downloaded file to NTSBupd.mdb.
+
+2020/03/23 - Marc Davidson:  Added the abillity to maintain a list
+            of updates that have been downloaded so updates will
+            not get skipped
 """
 
 import zipfile
@@ -79,6 +83,7 @@ def parsedata(lline):
     current_year = datetime.now().year
     last_year = current_year - 1
 
+    # walk down the line picking off update filename and date.
     for match in re.finditer('zip', lline):
         record = lline[match.end() - 44:match.end()].strip()
 
@@ -90,6 +95,14 @@ def parsedata(lline):
     return dllist
 
 
+def save_file(d_list):
+    with open("updates.txt","w") as f:
+        for line in d_list:
+            file_date = str(line[0])
+            file_name = line[1]
+            f.write(f"{file_date},{file_name}\r")
+
+
 def getcurrentupdate(d_list):
     """
     Sort the list of lists in reverse order and return the filename if the first position
@@ -97,8 +110,9 @@ def getcurrentupdate(d_list):
     :return: update filename
     """
     d_list.sort(reverse=True)
+    save_file(d_list)
     update, upfilename = d_list[0]
-    print(f"The update filename to download: {upfilename}.")
+    print(f"The update file0name to download: {upfilename}.")
 
     return upfilename
 
