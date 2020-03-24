@@ -28,6 +28,8 @@ import requests
 from datetime import datetime
 import re
 
+from validate import get_last_upd_date, compare_lst
+
 # global variables
 global g_tank_path
 
@@ -51,7 +53,7 @@ def downloadupdate(udfname: str):
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
-    return udfname
+    return True, udfname
 
 
 def unzip(source_filename, dest_dir):
@@ -90,17 +92,16 @@ def parsedata(lline):
         recdate = datetime.strptime(record[0:10].strip(), '%m/%d/%Y')
         if recdate.year in (last_year, current_year):
             tmp = record.split()
-            dllist.append((recdate, tmp[4]))
-
+            # dllist.append((recdate, tmp[4]))
+            dllist.append((record[:10].strip(), tmp[4]))
+    # dllist.sort(reverse=True)
     return dllist
 
 
-def save_file(d_list):
-    with open("updates.txt","w") as f:
-        for line in d_list:
-            file_date = str(line[0])
-            file_name = line[1]
-            f.write(f"{file_date},{file_name}\r")
+def save_the_date(save_date, save_file):
+    with open("updates.txt", "w") as f:
+        # file_date = str(save_date)
+        f.write(f"{str(save_date)},{save_file}\n")
 
 
 def getcurrentupdate(d_list):
@@ -109,12 +110,10 @@ def getcurrentupdate(d_list):
     :param d_list: list of dates and filenames from NTSB webpage
     :return: update filename
     """
-    d_list.sort(reverse=True)
-    save_file(d_list)
-    update, upfilename = d_list[0]
+    up_date, upfilename = d_list[0]
     print(f"The update file0name to download: {upfilename}.")
 
-    return upfilename
+    return up_date, upfilename
 
 
 def remove_file(afile):
@@ -166,13 +165,24 @@ if __name__ == '__main__':
     :return: Nothing.
     """
     g_tank_path = "."    # global variable for path to working storage.
+    lst_update = get_last_upd_date()
+    # new_updates = []
+
     # download the html from the NTSB updates page
     line = web_page_data()
     # parse out the data to process
-    dlist = parsedata(line)
+    dlist = parsedata(line)                                         # makes the list of available updates
+    # compare the list of available updates against the last update date.
+    new_updates = compare_lst([dlist], lst_update)
     # Ok now get the name of the most current NTSB update file available.
-    updatefile = getcurrentupdate(dlist)
-    # download the currently available NTSB update file.
-    updatefile = downloadupdate(updatefile)
-    # unzip, rename and to prepare for the ODBC mgr.
-    make_update_file(updatefile)
+    if len(new_updates) == 0:
+        print("You are up todate.")
+    else:
+        for update in new_updates:
+            # upd_date, updatefile = getcurrentupdate(update[1])
+            # download the currently available NTSB update file.
+            if downloadupdate(update[1]):
+                save_the_date(update)
+            # unzip, rename and to prepare for the ODBC mgr.
+            make_update_file(update[1])
+
