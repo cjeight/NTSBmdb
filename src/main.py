@@ -28,10 +28,48 @@ import requests
 from datetime import datetime
 import re
 
-from validate import get_last_upd_date, compare_lst
-
 # global variables
 global g_tank_path
+
+
+# TODO: 2020-03-22 00:00:00,up22Mar.zip
+def get_last_upd_date():
+    with open("updates.txt", "r") as f:
+        record = f.readline()
+
+    upd_date = record[0:10]
+    # file_name = record[20:-1]
+    date_upd = datetime.strptime(upd_date, "%Y/%m/%d")
+    print(f"{date_upd}")
+    return date_upd
+
+
+def compare_lst(d_list: list, lst_upd: datetime) -> list:
+    '''
+    :description: compare the last update date to the list of available updates
+                  from the NTSB website.
+    :param d_list: list of available updates from the NTSB web site.
+    :type d_list: list
+    :param lst_upd: The date of the last sucessful database update.
+    :type lst_upd: datetime
+    :return: a list of updates that need to be applied.
+    :rtype: list
+    '''
+
+    # update = []
+    # # i = 0
+    # for cur_upd in d_list:
+    #     if lst_upd < cur_upd:
+    #         update.append(cur_upd)
+    #         # update = (cur_upd[i][0], cur_upd[i][1])
+    #
+    #         # i += 1
+    #     else:
+    #         return update
+    print(f"{d_list}")
+    for cur in d_list:
+        print(f"{lst_upd} -- {cur}\n")
+    return
 
 
 def downloadupdate(udfname: str):
@@ -172,6 +210,8 @@ if __name__ == '__main__':
     line = web_page_data()
     # parse out the data to process
     dlist = parsedata(line)                                         # makes the list of available updates
+    # for t in dlist:
+    #     print(f"{t}\n")
     # compare the list of available updates against the last update date.
     new_updates = compare_lst([dlist], lst_update)
     # Ok now get the name of the most current NTSB update file available.
