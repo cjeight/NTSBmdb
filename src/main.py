@@ -30,6 +30,9 @@ import re
 
 # global variables
 global g_tank_path
+global line
+line = '''app.ntsb.gov - /avdata/Access/app.ntsb.gov - /avdata/Access/
+[To Parent Directory]  3/1/2020  5:11 AM    249315917 avall.zip  8/1/2019  3:16 AM       635959 up01Aug.zip 12/1/2019  4:16 AM       474817 up01Dec.zip  2/1/2020  4:15 AM       641802 up01Feb.zip  1/1/2020  4:16 AM       429191 up01Jan.zip  7/1/2019  3:16 AM       735431 up01Jul.zip  3/1/2020  4:16 AM       590150 up01Mar.zip 11/1/2019  3:16 AM       703841 up01Nov.zip 10/1/2019  3:16 AM       917609 up01Oct.zip  9/1/2019  3:16 AM       530763 up01Sep.zip 12/8/2019  4:16 AM       632123 up08Dec.zip  2/8/2020  4:16 AM       445295 up08Feb.zip  1/8/2020  4:16 AM       518921 up08Jan.zip  7/8/2019  3:16 AM       418470 up08Jul.zip  3/8/2020  3:16 AM       562128 up08Mar.zip 11/8/2019  4:16 AM      1493988 up08Nov.zip 10/8/2019  3:16 AM       613258 up08Oct.zip  9/8/2019  3:16 AM       575894 up08Sep.zip  8/9/2019  3:53 PM       540800 up09Aug.zip11/10/2019 10:17 PM      1505584 up10Nov.zip 8/15/2019  3:16 AM       478258 up15Aug.zip12/15/2019  4:16 AM       595125 up15Dec.zip 2/15/2020  4:15 AM        99395 up15Feb.zip 1/15/2020  4:16 AM       547196 up15Jan.zip 7/15/2019  3:16 AM       901351 up15Jul.zip 3/15/2020  3:16 AM       490107 up15Mar.zip11/15/2019  4:16 AM       469977 up15Nov.zip10/15/2019  3:16 AM       501391 up15Oct.zip 9/15/2019  3:16 AM       603746 up15Sep.zip 8/22/2019  3:16 AM       483113 up22Aug.zip12/22/2019  4:16 AM       793367 up22Dec.zip 2/22/2020  4:16 AM       505731 up22Feb.zip 1/22/2020  4:15 AM       549163 up22Jan.zip 7/22/2019  3:16 AM       591413 up22Jul.zip 3/22/2020  3:16 AM       619194 up22Mar.zip11/22/2019  4:16 AM       683226 up22Nov.zip10/22/2019  3:16 AM       559445 up22Oct.zip 9/22/2019  3:16 AM       618862 up22Sep.zip'''
 
 
 # TODO: 2020-03-22 00:00:00,up22Mar.zip
@@ -207,7 +210,7 @@ if __name__ == '__main__':
     # new_updates = []
 
     # download the html from the NTSB updates page
-    line = web_page_data()
+#    line = web_page_data()
     # parse out the data to process
     dlist = parsedata(line)                                         # makes the list of available updates
     # compare the list of available updates against the last update date.
@@ -222,7 +225,7 @@ if __name__ == '__main__':
             if downloadupdate(update[1]):
                 save_the_date(update)
                 # unzip, rename and to prepare for the ODBC mgr.
-                make_update_file(update[1])
+#                make_update_file(update[1])
             else:
                 print(f"Download of {update} failed.")
                 exit(9)
