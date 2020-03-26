@@ -41,11 +41,7 @@ def get_last_upd_date() -> datetime:
         record = f.readline()
 
     upd_date = record.split(",")[0]
-
-    # date_upd = datetime.strptime(upd_date, "%Y/%m/%d %H:%M:%S")
-    # return date_upd
-
-    return datetime.strptime(upd_date, "%m/%d/%Y")              # %H:%M:%S")
+    return datetime.strptime(upd_date, "%m/%d/%Y")
 
 
 def compare_lst(d_list: list, lst_upd: datetime) -> list:
@@ -61,9 +57,9 @@ def compare_lst(d_list: list, lst_upd: datetime) -> list:
     '''
 
     cur_update = []
-    # i = 0
+
     for cur_upd in d_list:
-        cur_date = datetime.strptime(cur_upd[0], "%m/%d/%Y")               #"%Y/%m/%d %H:%M:%S")
+        cur_date = datetime.strptime(cur_upd[0], "%m/%d/%Y")
         if lst_upd < cur_date:
             cur_update.append(cur_upd)
 
@@ -80,9 +76,7 @@ def downloadupdate(udfname: str) -> tuple:
     """
 
     url = r"https://app.ntsb.gov/avdata/Access/" + udfname
-    # TODO: look up the current directory and add \tank to the path.
-    udfname = g_tank_path + "\\" + udfname
-    # udfname = r"w:\repo\scrapeNTSB\tank" + "\\" + udfname
+    udfname = os.getcwd() + "\\" + udfname
     r = requests.get(url, stream=True)
     if r.status_code == requests.codes.ok:
         with open(udfname, 'wb') as f:
@@ -134,7 +128,6 @@ def parsedata(lline: str) -> list:
             tmp = record.split()
             # dllist.append((recdate, tmp[4]))
             dllist.append((record[:10].strip(), tmp[4]))
-    # dllist.sort(reverse=True)
     return dllist
 
 
@@ -146,10 +139,11 @@ def save_the_date(save_lst_upd: tuple):
 
 def getcurrentupdate(d_list):
     """
-    Sort the list of lists in reverse order and return the filename if the first position
-    :param d_list: list of dates and filenames from NTSB webpage
-    :return: update filename
-    """
+        Sort the list of lists in reverse order and return the filename if the first position
+        :param d_list: list of dates and filenames from NTSB webpage
+        :return: update filename
+        """
+    # dllist.sort(reverse=True)
     up_date, upfilename = d_list[0]
     print(f"The update file0name to download: {upfilename}.")
 
@@ -206,8 +200,6 @@ if __name__ == '__main__':
     """
     g_tank_path = "."    # global variable for path to working storage.
     lst_update = get_last_upd_date()
-    # dlist = []
-    # new_updates = []
 
     # download the html from the NTSB updates page
 #    line = web_page_data()
@@ -220,7 +212,7 @@ if __name__ == '__main__':
         print("You are up todate.")
     else:
         for update in new_updates:
-            # upd_date, updatefile = getcurrentupdate(update[1])
+            # upd_date, updatefile = getcurrentupdate(update[1])       TODO: dead code!  ???
             # download the currently available NTSB update file.
             if downloadupdate(update[1]):
                 save_the_date(update)
