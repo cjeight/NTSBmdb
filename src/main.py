@@ -33,15 +33,16 @@ global g_tank_path
 
 
 # TODO: 2020-03-22 00:00:00,up22Mar.zip
-def get_last_upd_date():
+def get_last_upd_date() -> datetime:
     with open("updates.txt", "r") as f:
         record = f.readline()
 
-    upd_date = record[0:10]
-    # file_name = record[20:-1]
-    date_upd = datetime.strptime(upd_date, "%Y/%m/%d")
-    print(f"{date_upd}")
-    return date_upd
+    upd_date = record.split(",")[0]
+
+    # date_upd = datetime.strptime(upd_date, "%Y/%m/%d %H:%M:%S")
+    # return date_upd
+
+    return datetime.strptime(upd_date, "%m/%d/%Y")              # %H:%M:%S")
 
 
 def compare_lst(d_list: list, lst_upd: datetime) -> list:
@@ -56,23 +57,17 @@ def compare_lst(d_list: list, lst_upd: datetime) -> list:
     :rtype: list
     '''
 
-    # update = []
-    # # i = 0
-    # for cur_upd in d_list:
-    #     if lst_upd < cur_upd:
-    #         update.append(cur_upd)
-    #         # update = (cur_upd[i][0], cur_upd[i][1])
-    #
-    #         # i += 1
-    #     else:
-    #         return update
-    print(f"{d_list}")
-    for cur in d_list:
-        print(f"{lst_upd} -- {cur}\n")
-    return
+    cur_update = []
+    # i = 0
+    for cur_upd in d_list:
+        cur_date = datetime.strptime(cur_upd[0], "%m/%d/%Y")               #"%Y/%m/%d %H:%M:%S")
+        if lst_upd < cur_date:
+            cur_update.append(cur_upd)
+
+    return cur_update
 
 
-def downloadupdate(udfname: str):
+def downloadupdate(udfname: str) -> tuple:
     """
     Download the latest update file from the NTSB webpage.
 
@@ -85,13 +80,15 @@ def downloadupdate(udfname: str):
     # TODO: look up the current directory and add \tank to the path.
     udfname = g_tank_path + "\\" + udfname
     # udfname = r"w:\repo\scrapeNTSB\tank" + "\\" + udfname
-    print("")
     r = requests.get(url, stream=True)
-    with open(udfname, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
-    return True, udfname
+    if r.status_code == requests.codes.ok:
+        with open(udfname, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        return True
+    else:
+        return False
 
 
 def unzip(source_filename, dest_dir):
@@ -109,12 +106,14 @@ def unzip(source_filename, dest_dir):
             zf.extract(member, path)
 
 
-def parsedata(lline):
+def parsedata(lline: str) -> list:
     """
     Parse out and convert the text date to type date and capture the filename
 
     :param  lline: line of text returned from the NTSB webpage
             containing update dates, time, size and filename.
+    :param  dllist: empty list to be populated with available
+            dates and filenames.
     :return: dllist : <list>
     """
 
@@ -136,10 +135,10 @@ def parsedata(lline):
     return dllist
 
 
-def save_the_date(save_date, save_file):
+def save_the_date(save_lst_upd: tuple):
+    save_date, save_fname = save_lst_upd
     with open("updates.txt", "w") as f:
-        # file_date = str(save_date)
-        f.write(f"{str(save_date)},{save_file}\n")
+        f.write(f"{save_date}, {save_fname}")
 
 
 def getcurrentupdate(d_list):
@@ -204,16 +203,15 @@ if __name__ == '__main__':
     """
     g_tank_path = "."    # global variable for path to working storage.
     lst_update = get_last_upd_date()
+    # dlist = []
     # new_updates = []
 
     # download the html from the NTSB updates page
     line = web_page_data()
     # parse out the data to process
     dlist = parsedata(line)                                         # makes the list of available updates
-    # for t in dlist:
-    #     print(f"{t}\n")
     # compare the list of available updates against the last update date.
-    new_updates = compare_lst([dlist], lst_update)
+    new_updates = compare_lst(dlist, lst_update)
     # Ok now get the name of the most current NTSB update file available.
     if len(new_updates) == 0:
         print("You are up todate.")
@@ -223,6 +221,9 @@ if __name__ == '__main__':
             # download the currently available NTSB update file.
             if downloadupdate(update[1]):
                 save_the_date(update)
-            # unzip, rename and to prepare for the ODBC mgr.
-            make_update_file(update[1])
+                # unzip, rename and to prepare for the ODBC mgr.
+                make_update_file(update[1])
+            else:
+                print(f"Download of {update} failed.")
+                exit(9)
 
