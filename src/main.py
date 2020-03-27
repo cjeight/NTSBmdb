@@ -212,14 +212,11 @@ if __name__ == '__main__':
 
     :return: Nothing.
     """
-    # g_tank_path = "."    # global variable for path to working storage.  TODO: remove after testing
-    lst_update = get_last_upd_date()
-
-    # download the html from the NTSB updates page
-#    line = web_page_data()
+    lst_update = get_last_upd_date()                        #
+    line = web_page_data()                                  # download the html from the NTSB updates page
     if len(line) < 1:
         # parse out the data to process
-        dlist = parsedata(line)                                         # makes the list of available updates
+        dlist = parsedata(line)                             # makes the list of available updates
         # compare the list of available updates from the NTSB website against the last update date.
         new_updates = compare_lst(dlist, lst_update)
         if len(new_updates) == 0:
@@ -228,7 +225,7 @@ if __name__ == '__main__':
             for update in new_updates:
                 if downloadupdate(update[1]):               # download the currently available NTSB update file.
                     save_the_date(update)
-#                   make_update_file(update[1])             # unzip, rename and to prepare for the ODBC mgr.
+                    make_update_file(update[1])             # unzip, rename and to prepare for the ODBC mgr.
                 else:
                     print(f"Download of {update} failed.")
                     exit(9)
