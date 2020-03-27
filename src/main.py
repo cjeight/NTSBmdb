@@ -18,6 +18,9 @@ out the current update file name by the posted date rather than by name.
 2020/03/23 - Marc Davidson:  Added the abillity to maintain a list
             of updates that have been downloaded so updates will
             not get skipped
+
+2020/03/26 - Marc Davidson:  Fixed the issue with the directory errors
+            tweaked and documented the code.
 """
 
 import zipfile
@@ -30,20 +33,15 @@ import re
 
 # global variables
 global file_path
-global line
-file_path = os.getcwd()
-line = '''app.ntsb.gov - /avdata/Access/app.ntsb.gov - /avdata/Access/
-[To Parent Directory]  3/1/2020  5:11 AM    249315917 avall.zip  8/1/2019  3:16 AM       635959 up01Aug.zip 12/1/2019  4:16 AM       474817 up01Dec.zip  2/1/2020  4:15 AM       641802 up01Feb.zip  1/1/2020  4:16 AM       429191 up01Jan.zip  7/1/2019  3:16 AM       735431 up01Jul.zip  3/1/2020  4:16 AM       590150 up01Mar.zip 11/1/2019  3:16 AM       703841 up01Nov.zip 10/1/2019  3:16 AM       917609 up01Oct.zip  9/1/2019  3:16 AM       530763 up01Sep.zip 12/8/2019  4:16 AM       632123 up08Dec.zip  2/8/2020  4:16 AM       445295 up08Feb.zip  1/8/2020  4:16 AM       518921 up08Jan.zip  7/8/2019  3:16 AM       418470 up08Jul.zip  3/8/2020  3:16 AM       562128 up08Mar.zip 11/8/2019  4:16 AM      1493988 up08Nov.zip 10/8/2019  3:16 AM       613258 up08Oct.zip  9/8/2019  3:16 AM       575894 up08Sep.zip  8/9/2019  3:53 PM       540800 up09Aug.zip11/10/2019 10:17 PM      1505584 up10Nov.zip 8/15/2019  3:16 AM       478258 up15Aug.zip12/15/2019  4:16 AM       595125 up15Dec.zip 2/15/2020  4:15 AM        99395 up15Feb.zip 1/15/2020  4:16 AM       547196 up15Jan.zip 7/15/2019  3:16 AM       901351 up15Jul.zip 3/15/2020  3:16 AM       490107 up15Mar.zip11/15/2019  4:16 AM       469977 up15Nov.zip10/15/2019  3:16 AM       501391 up15Oct.zip 9/15/2019  3:16 AM       603746 up15Sep.zip 8/22/2019  3:16 AM       483113 up22Aug.zip12/22/2019  4:16 AM       793367 up22Dec.zip 2/22/2020  4:16 AM       505731 up22Feb.zip 1/22/2020  4:15 AM       549163 up22Jan.zip 7/22/2019  3:16 AM       591413 up22Jul.zip 3/22/2020  3:16 AM       619194 up22Mar.zip11/22/2019  4:16 AM       683226 up22Nov.zip10/22/2019  3:16 AM       559445 up22Oct.zip 9/22/2019  3:16 AM       618862 up22Sep.zip'''
 
 
-# TODO: 2020-03-22 00:00:00,up22Mar.zip
 def get_last_upd_date() -> datetime:
-    '''
+    """
     :description: Read the date of the last file downloaded from the NTSB website
                   and convert it to type datetime.
     :rtype: datetime
     :return: the date of the last update downloaded.
-    '''
+    """
     with open("updates.txt", "r") as f:
         record = f.readline()
 
@@ -52,7 +50,7 @@ def get_last_upd_date() -> datetime:
 
 
 def compare_lst(d_list: list, lst_upd: datetime) -> list:
-    '''
+    """
     :description: compare the last update date to the list of available updates
                   from the NTSB website.
     :param d_list: list of available updates from the NTSB web site.
@@ -61,7 +59,7 @@ def compare_lst(d_list: list, lst_upd: datetime) -> list:
     :type lst_upd: datetime
     :return: a list of updates that need to be applied.
     :rtype: list
-    '''
+    """
 
     cur_update = []
 
@@ -96,12 +94,12 @@ def downloadupdate(udfname: str) -> bool:
 
 
 def unzip(source_filename: str, dest_dir: str):
-    '''
+    """
     :discription: The downloaded file is a ZIP archive.  Unzip the zip file.
     :param source_filename: file to be unziped
     :param dest_dir: the path to unzip the file to
     :return: none
-    '''
+    """
     with zipfile.ZipFile(source_filename) as zf:
         for member in zf.infolist():
             # Path traversal defense
@@ -122,8 +120,6 @@ def parsedata(lline: str) -> list:
 
     :param  lline: line of text returned from the NTSB webpage
             containing update dates, time, size and filename.
-    :param  dllist: empty list to be populated with available
-            dates and filenames.
     :return: dllist : <list>
     """
 
@@ -145,12 +141,12 @@ def parsedata(lline: str) -> list:
 
 
 def save_the_date(save_lst_upd: tuple):
-    '''
+    """
     :description: Save the date and file name of the last update.
     :param save_lst_upd: the date and filename of the last update.
     :param type: tuple
     :return:
-    '''
+    """
     save_date, save_fname = save_lst_upd
     with open("updates.txt", "w") as f:
         f.write(f"{save_date}, {save_fname}")
@@ -167,11 +163,11 @@ def remove_file(afile: str):
 
 
 def web_page_data() -> str:
-    '''
+    """
     :description: Scrape the NTSB update webpage to get updates available
                   for downloading.
     :return: Raw data from the website or an empty string if scrape fails.
-    '''
+    """
     url = 'https://app.ntsb.gov/avdata/Access/'     # NTSB source for update files
     r = requests.get(url)                           # Get a copy of the webpage HTML
     if r.status_code == requests.codes.ok:          # anything execpt 200 is a failure
@@ -200,7 +196,8 @@ def make_update_file(zip_file: str):
     os.rename(mdb_file, odbc_file)                      # rename file so ODBC connection mgr will see the data file.
     remove_file(zip_file)                               # remove the unzipped update file.
 
-    print(f"{os.path.split(zip_file)[1]} downloaded to {file_path}, unzipped and renamed to {os.path.split(odbc_file)[1]}.")
+    print(f"{os.path.split(zip_file)[1]} downloaded to {file_path}, "
+          f"unzipped and renamed to {os.path.split(odbc_file)[1]}.")
 
 
 if __name__ == '__main__':
@@ -212,6 +209,7 @@ if __name__ == '__main__':
 
     :return: Nothing.
     """
+    file_path = os.getcwd()                                 # capture the current path/directory
     lst_update = get_last_upd_date()                        #
     line = web_page_data()                                  # download the html from the NTSB updates page
     if len(line) < 1:
@@ -232,4 +230,3 @@ if __name__ == '__main__':
     else:
         print(f"Scrape of the NTSB webpage FAILED.")
         exit(8)
-
