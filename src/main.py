@@ -22,7 +22,7 @@ out the current update file name by the posted date rather than by name.
 2020/03/26 - Marc Davidson:  Fixed the issue with the directory errors
             tweaked and documented the code.
 """
-
+import sys
 import zipfile
 import os
 
@@ -42,8 +42,12 @@ def get_last_upd_date() -> datetime:
     :rtype: datetime
     :return: the date of the last update downloaded.
     """
-    with open("updates.txt", "r") as f:
-        record = f.readline()
+    try:
+        with open("updates.txt", "r") as f:
+            record = f.readline()
+    except:
+        print("Oops!", sys.exc_info()[0], "occured while reading the last update date.")
+        sys.exit(2)
 
     upd_date = record.split(",")[0]
     return datetime.strptime(upd_date, "%m/%d/%Y")
@@ -84,10 +88,14 @@ def downloadupdate(udfname: str) -> bool:
     udfname = file_path + "\\" + udfname
     r = requests.get(url, stream=True)
     if r.status_code == requests.codes.ok:
-        with open(udfname, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
+        try:
+            with open(udfname, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+        except:
+            print("Oops!", sys.exc_info()[0], "occured while writing the update ZIP.")
+            sys.exit(3)
         return True
     else:
         return False
@@ -100,18 +108,22 @@ def unzip(source_filename: str, dest_dir: str):
     :param dest_dir: the path to unzip the file to
     :return: none
     """
-    with zipfile.ZipFile(source_filename) as zf:
-        for member in zf.infolist():
-            # Path traversal defense
-            words = member.filename.split('/')
-            path = dest_dir
-            for word in words[:-1]:
-                drive, word = os.path.splitdrive(word)
-                head, word = os.path.split(word)
-                if word in (os.curdir, os.pardir, ''):
-                    continue
-                path = os.path.join(path, word)
-            zf.extract(member, path)
+    try:
+        with zipfile.ZipFile(source_filename) as zf:
+            for member in zf.infolist():
+                # Path traversal defense
+                words = member.filename.split('/')
+                path = dest_dir
+                for word in words[:-1]:
+                    drive, word = os.path.splitdrive(word)
+                    head, word = os.path.split(word)
+                    if word in (os.curdir, os.pardir, ''):
+                        continue
+                    path = os.path.join(path, word)
+                zf.extract(member, path)
+    except:
+        print("Oops!", sys.exc_info()[0], "occured while extracting the update file.")
+        sys.exit(7)
 
 
 def parsedata(lline: str) -> list:
@@ -144,12 +156,16 @@ def save_the_date(save_lst_upd: tuple):
     """
     :description: Save the date and file name of the last update.
     :param save_lst_upd: the date and filename of the last update.
-    :param type: tuple
     :return:
     """
     save_date, save_fname = save_lst_upd
-    with open("updates.txt", "w") as f:
-        f.write(f"{save_date}, {save_fname}")
+
+    try:
+        with open("updates.txt", "w") as f:
+            f.write(f"{save_date}, {save_fname}")
+    except:
+        print("Oops!", sys.exc_info()[0], "occurred while saving the update date.")
+        sys.exit(5)
 
 
 def remove_file(afile: str):
@@ -158,8 +174,12 @@ def remove_file(afile: str):
     :argument afile: the name of a file to remove.
     :returns nothing
     """
-    if os.path.isfile(afile):
-        os.remove(afile)
+    try:
+        if os.path.isfile(afile):
+            os.remove(afile)
+    except:
+        print("Oops!", sys.exc_info()[0], "occured.")
+        sys.exit(3)
 
 
 def web_page_data() -> str:
@@ -170,7 +190,7 @@ def web_page_data() -> str:
     """
     url = 'https://app.ntsb.gov/avdata/Access/'     # NTSB source for update files
     r = requests.get(url)                           # Get a copy of the webpage HTML
-    if r.status_code == requests.codes.ok:          # anything execpt 200 is a failure
+    if r.status_code == requests.codes.ok:          # anything except 200 is a failure
         data = r.text                               # filter page
         soup = BeautifulSoup(data, "html.parser")   # more filtering
         data_line = soup.get_text()                 # even more filtering
@@ -193,7 +213,13 @@ def make_update_file(zip_file: str):
     mdb_file = os.path.splitext(zip_file)[0] + ".mdb"
 
     remove_file(odbc_file)                              # make sure there's not an old copy of NTSBupd in the directory.
-    os.rename(mdb_file, odbc_file)                      # rename file so ODBC connection mgr will see the data file.
+
+    try:
+        os.rename(mdb_file, odbc_file)                  # rename file so ODBC connection mgr will see the data file.
+    except:
+        print("Oops!", sys.exc_info()[0], "occured while renaming the update file.")
+        sys.exit(4)
+
     remove_file(zip_file)                               # remove the unzipped update file.
 
     print(f"{os.path.split(zip_file)[1]} downloaded to {file_path}, "
@@ -212,13 +238,13 @@ if __name__ == '__main__':
     file_path = os.getcwd()                                 # capture the current path/directory
     lst_update = get_last_upd_date()                        #
     line = web_page_data()                                  # download the html from the NTSB updates page
-    if len(line) < 1:
+    if len(line) > 0:
         # parse out the data to process
         dlist = parsedata(line)                             # makes the list of available updates
         # compare the list of available updates from the NTSB website against the last update date.
         new_updates = compare_lst(dlist, lst_update)
         if len(new_updates) == 0:
-            print("You are up todate.")
+            print("You are up to-date.")
         else:
             for update in new_updates:
                 if downloadupdate(update[1]):               # download the currently available NTSB update file.
@@ -226,7 +252,7 @@ if __name__ == '__main__':
                     make_update_file(update[1])             # unzip, rename and to prepare for the ODBC mgr.
                 else:
                     print(f"Download of {update} failed.")
-                    exit(9)
+                    sys.exit(9)
     else:
         print(f"Scrape of the NTSB webpage FAILED.")
-        exit(8)
+        sys.exit(8)
